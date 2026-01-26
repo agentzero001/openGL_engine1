@@ -10,8 +10,6 @@ float aspect;
 
 glm::mat4 pMat, lightPmatrix;
 
-int listLength;
-
 float* matAmb = bronzeAmbient();
 float* matDif = bronzeDiffuse();
 float* matSpe = bronzeSpecular();
@@ -56,14 +54,12 @@ std::vector<float> surfaceNvalues;
 std::vector<float> surfaceTvalues;
 std::vector<int> surfaceInd;
 
-
-
-
-
 float dt;
 float lastTime;
 float startTime;
 float elapsedTime;
+
+GLuint shadowTex, shadowBuffer;
 
 float deltaTime = .0f;
 float lastFrame = .0f;
@@ -76,20 +72,12 @@ int screenX, screenY;
 
 float lightFOV = 1.0472f * 2.0;
 
-GLuint shadowTex, shadowBuffer;
-
-
 int numParticles = 20000;
-
-
-
 
 auto f = [](float t) -> glm::vec3 { return glm::vec3(earthX(t), earthY(t), earthZ(t)); };
 auto ft = [](float t) -> glm::vec3 { return glm::vec3(earthX(t- PI*2.0f), earthY(t), earthZ(t- PI*2.0f)); };
-
 auto f2 = [](float t) -> glm::vec3 { return glm::vec3(20.0f* cos(cos(-t)), moonY(t), 20.0f * sin(sin(-t))); };
 auto f2t = [](float t) -> glm::vec3 { return glm::vec3(20.0f* cos(cos(-t )- PI), moonY(t), 20.0f * sin(sin(-t )- PI)); };
-
 auto fm = [](float t) -> glm::vec3 { return glm::vec3(moonX(t), moonY(t), moonZ(t)); };
 
 auto sFunc1 = [] (float t) -> float {return (sin(t * 20.0f) * .5 ) + 1.0f; };
@@ -101,13 +89,8 @@ auto constantTen = [] (float t) -> float {return 10.0f; };
 auto constantX = [] (float t) -> float {return 5.0f; };
 
 auto getLightPos = [] (float t) -> glm::vec3 { return glm::vec3(sin(t) * 50.0f, 40.0f, 0.0f); };
-
 auto surfacePos = [] (float t) -> glm::vec3 { return glm::vec3(0.0f, 10.0f, 0.0f); };
-
 auto constantPIhalfN = [] (float t) -> float {return -PIhalf; };
-
-
-
 
 Context::Context(GLFWwindow* _window) : _window(_window), keyboardhandler(_window) {}
 
@@ -173,7 +156,6 @@ void Context::init() {
     sLoc1 = glGetUniformLocation(renderingProgram1, "shadow_mvp");
     sLoc2 = glGetUniformLocation(renderingProgram2, "shadow_mvp");
 
-
     globalAmbLoc = glGetUniformLocation(renderingProgram1, "globalAmbient");
     ambLoc = glGetUniformLocation(renderingProgram1, "light.ambient");
     diffLoc = glGetUniformLocation(renderingProgram1, "light.diffuse");
@@ -184,7 +166,6 @@ void Context::init() {
     mSpecLoc = glGetUniformLocation(renderingProgram1, "material.specular");
     mShiLoc = glGetUniformLocation(renderingProgram1, "material.shininess");
 
-
     mvLocCube = glGetUniformLocation(renderingProgramCube, "mv_matrix");
 	projLocCube = glGetUniformLocation(renderingProgramCube, "proj_matrix");
 
@@ -193,7 +174,6 @@ void Context::init() {
     tfLocInstanced = glGetUniformLocation(renderingProgramInstanced, "tf");
 
     createTransformations();
-
 }
 
 void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
@@ -203,8 +183,6 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
         d = -d;
     }
 
-
-    
     glUniform1i(startTimeLoc, GL_FALSE);
     kPressed = keyboardHandler.isKeyPressed(GLFW_KEY_K);
     if (kPressed) {
@@ -220,13 +198,6 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
     }
     spacePressedLastFrame = spacePressedNow;       
 
-
-
-    
-   
-
-
-
     glClear(GL_DEPTH_BUFFER_BIT);
     // glClearColor(0.1f, 0.1f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -234,17 +205,12 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
 	glFrontFace(GL_CCW);
     // glEnable(GL_MULTISAMPLE);
 
-    
-    
     if (!lookAtCenter) { vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));}
     // else               { vMat = glm::lookAt(glm::vec3(cameraX, cameraY, cameraZ), f(dt), up);}
      else               { vMat = glm::lookAt(glm::vec3(cameraX, cameraY, cameraZ), glm::vec3(0.0f, 0.0f, 0.0f), up);}
         // { vMat = glm::lookAt(glm::vec3(cameraX, cameraY, cameraZ), origin, up);}
 
-    // drawObjectsInstanced(SPHERE, STATUE,  sphereInd.size());
-
     // drawCubeMap();
-
     
     glBindFramebuffer(GL_FRAMEBUFFER, shadowBuffer);
     glViewport(0, 0, screenX * shadowTexScale, screenY * shadowTexScale);
@@ -262,10 +228,6 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
     glBindTexture(GL_TEXTURE_2D, shadowTex);
     glDrawBuffer(GL_FRONT);
     passTwo();
-
-    
-    
-
  
     while (!mvStack.empty()) {
         mvStack.pop();
@@ -307,8 +269,6 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
     ImGui::End();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    // updateFrameTime(dt);
 }
 
 void Context::drawObject(std::stack<glm::mat4>& mvStack, Transform* transform, int id, int numVertices, int texId) {
@@ -343,10 +303,7 @@ void Context::drawObject(std::stack<glm::mat4>& mvStack, Transform* transform, i
     //to tell openGL which buffer contains the indices
     //openGL is able to recognize the presence of a GL_ELEMENT_ARRAY_BUFFER and utilize it to access the vertex attributes
     glDrawElements(GL_TRIANGLES, numVertices, GL_UNSIGNED_INT, 0); 
-
 }
-
-
 
 void Context::drawObjectsInstanced(int id, int texId, int numVertices) {
 
@@ -368,7 +325,6 @@ void Context::drawObjectsInstanced(int id, int texId, int numVertices) {
     glBindBuffer(GL_ARRAY_BUFFER, vbo[(id * 4) + 3]);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(2);
-
     glBindTexture(GL_TEXTURE_2D, textures[texId]);
 
     //indices
@@ -432,8 +388,8 @@ void Context::drawCubeMap() {
 
 
 void Context::setupVertices() {
+
     loadModel(room_vertices, room_indices, ROOM_CUBE_PATH);
-  
     for (auto& vertex : room_vertices) {
         roomCubeValues.push_back(vertex.pos.x);
         roomCubeValues.push_back(vertex.pos.y);
@@ -445,9 +401,7 @@ void Context::setupVertices() {
         roomCubeNvalues.push_back(vertex.norm.z);
     }
 
-
     loadModel(cube_vertices, cube_indices, CUBE_PATH);
-  
     for (auto& vertex : cube_vertices) {
         cubeValues.push_back(vertex.pos.x);
         cubeValues.push_back(vertex.pos.y);
@@ -525,10 +479,6 @@ void Context::setupVertices() {
     }
 
     perInstanceData = createPerInstanceData(numParticles);
-    for (const glm::vec3& value : perInstanceData) {
-        // std::cout << value.x << std::endl;
-    }
-
 
     glGenVertexArrays(1, vao);
     glBindVertexArray(vao[0]);
@@ -539,17 +489,14 @@ void Context::setupVertices() {
     bindBuffers(SPHERE, vbo, sphereValues, sphereTvalues, sphereNvalues, sphereInd);
     bindBuffers(ROOM, vbo, roomCubeValues, roomCubeTvalues, roomCubeNvalues, roomCubeInd);
     bindBuffers(PLANE, vbo, surfaceValues, surfaceTvalues, surfaceNvalues, surfaceInd);
-    
-    
+      
     glBindBuffer(GL_ARRAY_BUFFER, vbo[numVBOs - 1]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertexPositions) * 4, cubeVertexPositions, GL_STATIC_DRAW);
-
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[numVBOs - 2]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeTextureCoord) * 4, cubeTextureCoord, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[numVBOs - 3]);
-
     glBufferData(
         GL_ARRAY_BUFFER,
         perInstanceData.size() * sizeof(glm::vec3),
@@ -557,14 +504,12 @@ void Context::setupVertices() {
         GL_STATIC_DRAW
     );
 
+    createShaderStorageBuffers(numParticles);
 
     glfwGetFramebufferSize(_window, &screenX, &screenY);
     aspect = (float)screenX / (float)screenY;
     pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f); //1.0472 rad = 60 deg
     lightPmatrix = glm::perspective(lightFOV, aspect, 0.1f, 1000.0f); //1.0472 rad = 60 deg
-
-
-
 }
 
 
@@ -575,8 +520,7 @@ void window_reshape_callback(GLFWwindow* window, int newWidth, int newHeight) {
     lightPmatrix = glm::perspective(lightFOV, aspect, 0.1f, 1000.0f);
     screenX = newWidth;
     screenY = newHeight;
-    setupShadowBuffers(screenX, screenY, shadowBuffer, shadowTex, shadowTexScale);   
-    
+    setupShadowBuffers(screenX, screenY, shadowBuffer, shadowTex, shadowTexScale);    
 }
 
 void Context::installLights( glm::mat4 vMatrix) {
@@ -600,7 +544,6 @@ void Context::installLights( glm::mat4 vMatrix) {
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
 }
 
-
 void Context::passOne() {
     lightVmatrix = glm::lookAt(currentLightPos, origin, up);
 
@@ -611,10 +554,6 @@ void Context::passOne() {
 	glDepthFunc(GL_LEQUAL);
    
     mvStack.push(glm::mat4(1.0f));
-
-
- 
-
     // drawObjectShadow(mvStack, t1, 0, torus.getNumIndices());
     // drawObjectShadow(mvStack, t3, 0, torus.getNumIndices());
     // for (Transform& transformation : transformations1) {
@@ -640,7 +579,6 @@ void Context::passOne() {
     //     mvStack.pop();
     // }
 
-  
     // drawObjectShadow(mvStack, t4, 0, torus.getNumIndices());
     // drawObjectShadow(mvStack, t3, 0, torus.getNumIndices());
     // for (Transform& transformation : transformations1) {
@@ -666,15 +604,11 @@ void Context::passOne() {
     //     mvStack.pop();
     // }
 
-    
     // drawObjectShadow(mvStack, surfaceTransform2, PLANE, surfaceInd.size());
     // mvStack.pop();
-    
-
     while (!mvStack.empty()) {
         mvStack.pop();
     };
-
 }
 
 void Context::passTwo() {
@@ -684,12 +618,9 @@ void Context::passTwo() {
     glUseProgram(renderingProgram1);
 
     glActiveTexture(GL_TEXTURE0);
-
     installLights(vMat);
     mvStack.push(vMat);  
 
- 
-    
     // drawObject(mvStack, t1, 0, torus.getNumIndices(), 0);
     // drawObject(mvStack, t3, 0, torus.getNumIndices(), 0);
     // for (Transform& transformation : transformations1) {
@@ -745,7 +676,6 @@ void Context::passTwo() {
     // mvStack.pop();
     // mvStack.pop();
 
-
     // drawObject(mvStack, surfaceTransform1, PLANE, surfaceInd.size(), 1);
     // mvStack.pop();
     drawObject(mvStack, surfaceTransform2, PLANE, surfaceInd.size(), 1);
@@ -755,17 +685,13 @@ void Context::passTwo() {
     drawObjectsInstanced(SPHERE, ONYX, sphereInd.size());
     // mvStack.pop();
 
-
     glFrontFace(GL_CW);
     drawObject(mvStack, t6, ROOM, roomCubeInd.size(), GRASS);
     
-    
-
     while (!mvStack.empty()) {
         mvStack.pop();
     };
 }
-
 
 void Context::createTransformations() {
 
@@ -779,8 +705,6 @@ void Context::createTransformations() {
 
     surfaceTransform1 = new Transform(glm::vec3(0.0f, 10.0f, 0.0f), 3.0f, -PIhalf/2.0f, rotationX);
     surfaceTransform2 = new Transform(surfacePos, constantX, constantT, rotationZ);
-
-
 
     auto makeTranslationFunction1 = [](float offset) {
         return [offset](float t) -> glm::vec3 {
@@ -805,7 +729,6 @@ void Context::createTransformations() {
     for (float i = 0.0f; i < PI * 2.0f; i+=.3f) {
         translationFunctions1.push_back(makeTranslationFunction1(i));
         translationFunctions2.push_back(makeTranslationFunction2(i));
-
     }
 
     for (auto& func : translationFunctions1) {

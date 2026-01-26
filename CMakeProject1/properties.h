@@ -58,7 +58,6 @@ extern float cubeVertexPositions[108];
 
 extern float cubeTextureCoord[72];
 
-
 extern float earthX1(float t);
 extern float earthY1(float t);
 extern float earthZ1(float t);
@@ -72,7 +71,6 @@ extern glm::vec3 tFunc1(float t);
 extern glm::vec3 tFuncFloor(float t);
 
 extern glm::mat4 b;
-
 
 extern float earthX(float t);
 extern float earthY(float t);

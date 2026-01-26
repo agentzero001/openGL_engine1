@@ -1,5 +1,15 @@
 #version 430
 
+struct Particle {
+	// vec3 position;
+	vec3 velocity;
+    // vec4 color;
+};
+
+layout(std430, binding = 0) buffer ParticleBuffer {
+    Particle particles[];
+};
+
 layout (location = 0) in vec3 vertPos;
 layout (location = 1) in vec3 vertNormal;
 layout (location = 2) in vec2 texCoord;
@@ -15,6 +25,7 @@ out vec3 varyingNormal;
 out vec3 varyingLightDir;
 out vec3 varyingVertPos;
 out vec3 varyingHalfVector;
+
 
 out vec4 shadow_coord;
 
@@ -54,6 +65,8 @@ mat4 computeInstancedModelView();
 mat4 final_mv_matrix;
 mat4 final_norm_matrix;
 
+vec3 Xnormal = vec3(1.0, 0.0, 0.0);
+float S = 10.0;
 
 
 
@@ -121,23 +134,29 @@ mat4 computeInstancedModelView() {
   
     float speed = startTime ? dt : 0.0;
 
-    float i = float(gl_InstanceID);
+    // int i = gl_InstanceID;
+    Particle particle = particles[gl_InstanceID];
 
     // float a = sin(203.0 * i * dt / 8000.0) * 10.0;
     // float b = sin(301.0 * i * dt / 4001.0) * 10.0;
     // float c = sin(400.0 * i * dt / 6003.0) * 10.0;
-    
+
     mat4 localRotY = buildRotateY(speed * 0.5);
     mat4 localRotZ = buildRotateZ(speed * 0.2);
 
-    vec3 dir = (localRotY * vec4(instanceData.xyz, 1.0)).xyz;
+    // vec3 dir = (localRotY * vec4(instanceData.xyz, 1.0)).xyz;
+    // vec3 offset = instanceData * speed * 60.0;
+    vec3 offset = particle.velocity * speed * 60.0;
+    // vec3 offset = dir * speed * 60.0;
 
-    vec3 offset = dir * speed * 60.0;
+    // if (offset.x >= S && abs(offset.y) <= S && abs(offset.z) <= S) {
+    //     offset = reflect(offset, Xnormal);
+    // }
     
     // mat4 localTrans = buildTranslate(a, b, c);
     // return v_matrix * (localTrans * localRotX * localRotY * localRotZ);
 
     mat4 localTrans = buildTranslate(offset.x, offset.y, offset.z);
-    return v_matrix * localTrans;
+    return v_matrix * localRotY * localTrans;
 }
 

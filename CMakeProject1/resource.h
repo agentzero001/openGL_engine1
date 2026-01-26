@@ -58,9 +58,6 @@ enum Textures {
     ONYX
 };
 
-// RESOURCE_DIR
-
-
 inline const char* CUBE_MAP_DIR = "C:/Users/jensm/source/repos/CMakeProject1/res/textures/sunset";
 
 struct Vertex {
@@ -72,6 +69,12 @@ struct Vertex {
 	glm::vec3 color;
 	glm::vec2 texCoord;
 	glm::vec3 norm;
+};
+
+struct Particle {
+    // glm::vec3 pos;
+    alignas(16) glm::vec3 velocity;
+    // glm::vec4 color;
 };
 
 namespace std {
@@ -97,6 +100,7 @@ void bindBuffers(
     std::vector<int>& ind );
 
 std::vector<glm::vec3> createPerInstanceData(int numParticles);
+void createShaderStorageBuffers(int numParticles);
 
 extern const std::vector<Vertex> surfaceVertices;
 extern const std::vector<uint16_t> surfaceIndices;
@@ -105,3 +109,4 @@ extern const std::vector<uint16_t> surfaceIndices;
 extern float vertexPositions[108];
 
 // extern std::vector<float> perInstanceData;
+

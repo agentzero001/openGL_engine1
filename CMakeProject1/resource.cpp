@@ -170,6 +170,7 @@ void bindBuffers(
 }
 
 
+
 float vertexPositions[108] = {
         -1.0f, -1.0f,  1.0f, // Triangle 1
          1.0f, -1.0f,  1.0f,
@@ -246,4 +247,45 @@ std::vector<glm::vec3> createPerInstanceData(int numParticles) {
     }
 
     return perInstanceData;
+}
+
+void createShaderStorageBuffers(int numParticles) {
+ 
+
+    std::vector<Particle> particles(numParticles);
+    std::default_random_engine rndEngine((unsigned)time(nullptr));
+	std::uniform_real_distribution<float> rndDist(0.0f, 1.0f);
+
+    for (auto& particle: particles) {
+        float u = rndDist(rndEngine);
+        float v = rndDist(rndEngine);
+        float w = rndDist(rndEngine);
+
+        float radius = 0.25f * std::cbrt(u);
+
+        // Spherical coordinates
+        float theta = 2.0f * 3.14159265358979323846f * v;   
+        float phi   = std::acos(1.0f - 2.0f * w);         
+
+        // Convert to Cartesian coordinates
+        float x = radius * std::sin(phi) * std::cos(theta);
+        float y = radius * std::sin(phi) * std::sin(theta);
+        float z = radius * std::cos(phi);
+
+        particle.velocity = glm::vec3(x, y, z);
+    
+    }
+
+    GLuint instanceSSBO = 0;
+    
+    //generate buffer
+    glGenBuffers(1, &instanceSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, instanceSSBO);
+
+    //upload data
+    glBufferData(GL_SHADER_STORAGE_BUFFER, numParticles * sizeof(Particle), particles.data(), GL_DYNAMIC_DRAW); 
+
+    //bind buffer to shader
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, instanceSSBO);
+
 }
