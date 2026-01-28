@@ -23,6 +23,7 @@ add_executable (
   "torus.cpp"
   "sphere.cpp"
   "resource.cpp"
+  "particleSSBO.cpp"
   ImGui/imgui.cpp
   ImGui/imgui_draw.cpp
   ImGui/imgui_tables.cpp

@@ -170,56 +170,6 @@ void bindBuffers(
 }
 
 
-
-float vertexPositions[108] = {
-        -1.0f, -1.0f,  1.0f, // Triangle 1
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f, // Triangle 2
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        // Back face
-        -1.0f, -1.0f, -1.0f, // Triangle 1
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f, // Triangle 2
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-
-        // Left face
-        -1.0f, -1.0f, -1.0f, // Triangle 1
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f, // Triangle 2
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-
-        // Right face
-         1.0f, -1.0f, -1.0f, // Triangle 1
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f, // Triangle 2
-         1.0f,  1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-
-        // Top face
-        -1.0f,  1.0f, -1.0f, // Triangle 1
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f, // Triangle 2
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        // Bottom face
-        -1.0f, -1.0f, -1.0f, // Triangle 1
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f, // Triangle 2
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f
-    };
-
 std::vector<glm::vec3> createPerInstanceData(int numParticles) {
     std::vector<glm::vec3> perInstanceData;
 
@@ -245,12 +195,10 @@ std::vector<glm::vec3> createPerInstanceData(int numParticles) {
         perInstanceData.push_back(glm::vec3(x, y, z));
     
     }
-
     return perInstanceData;
 }
 
 void createShaderStorageBuffers(int numParticles) {
- 
 
     std::vector<Particle> particles(numParticles);
     std::default_random_engine rndEngine((unsigned)time(nullptr));
@@ -273,7 +221,10 @@ void createShaderStorageBuffers(int numParticles) {
         float z = radius * std::cos(phi);
 
         particle.velocity = glm::vec3(x, y, z);
-    
+        particle.pos = glm::vec3(0.1, 0.1, 0.1);
+        // particle.isActive = true;
+        
+
     }
 
     GLuint instanceSSBO = 0;
@@ -287,5 +238,34 @@ void createShaderStorageBuffers(int numParticles) {
 
     //bind buffer to shader
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, instanceSSBO);
+
+}
+
+void createShaderStorageBuffers2(int numParticles) {
+
+    std::vector<Particle> particles(numParticles);
+    std::default_random_engine rndEngine((unsigned)time(nullptr));
+	std::uniform_real_distribution<float> rndDist(-1.0f, 1.0f);
+
+    for (auto& particle: particles) {
+        float x = rndDist(rndEngine) * 60.0;
+        float z = rndDist(rndEngine) * 60.0;
+        
+        particle.pos = glm::vec3(x, 20.0, z);
+        particle.velocity = glm::vec3(0.0, -.2, 0.0);
+
+    }
+
+    GLuint instanceSSBO = 0;
+    
+    //generate buffer
+    glGenBuffers(1, &instanceSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, instanceSSBO);
+
+    //upload data
+    glBufferData(GL_SHADER_STORAGE_BUFFER, numParticles * sizeof(Particle), particles.data(), GL_DYNAMIC_DRAW); 
+
+    //bind buffer to shader
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, instanceSSBO);
 
 }

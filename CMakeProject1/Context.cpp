@@ -72,7 +72,7 @@ int screenX, screenY;
 
 float lightFOV = 1.0472f * 2.0;
 
-int numParticles = 20000;
+int numParticles = 500;
 
 auto f = [](float t) -> glm::vec3 { return glm::vec3(earthX(t), earthY(t), earthZ(t)); };
 auto ft = [](float t) -> glm::vec3 { return glm::vec3(earthX(t- PI*2.0f), earthY(t), earthZ(t- PI*2.0f)); };
@@ -139,6 +139,10 @@ void Context::init() {
 		"C:/Users/jensm/source/repos/CMakeProject1/res/shaders/instance.frag"
 	);
 
+    computeShaderProgram = createShaderProgramC(
+        "C:/Users/jensm/source/repos/CMakeProject1/res/shaders/computeShader.comp"
+    );
+
     
     setupVertices();
     setupShadowBuffers(screenX, screenY, shadowBuffer, shadowTex, shadowTexScale);
@@ -173,6 +177,9 @@ void Context::init() {
 	projLocInstanced = glGetUniformLocation(renderingProgramInstanced, "proj_matrix");
     tfLocInstanced = glGetUniformLocation(renderingProgramInstanced, "tf");
 
+    startTimeLocC = glGetUniformLocation(computeShaderProgram, "startTime");
+    tfLocC = glGetUniformLocation(computeShaderProgram, "dt");
+
     createTransformations();
 }
 
@@ -183,14 +190,19 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
         d = -d;
     }
 
-    glUniform1i(startTimeLoc, GL_FALSE);
+    glUseProgram(computeShaderProgram);
+    glUniform1i(startTimeLocC, GL_FALSE);
     kPressed = keyboardHandler.isKeyPressed(GLFW_KEY_K);
     if (kPressed) {
         elapsedTime = glfwGetTime() - startTime;
-        glUniform1i(startTimeLoc, GL_TRUE);
-        glUniform1f(tfLoc, elapsedTime);
+        glUniform1i(startTimeLocC, GL_TRUE);
+        glUniform1f(tfLocC, elapsedTime);
+        std::cout << elapsedTime << std::endl;
     }
     else startTime = (float)glfwGetTime();
+
+    glDispatchCompute(numParticles, 1, 1);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS); 
 
     spacePressedNow = keyboardHandler.isKeyPressed(GLFW_KEY_SPACE);
     if (spacePressedNow && !spacePressedLastFrame) {
@@ -216,11 +228,12 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
     glViewport(0, 0, screenX * shadowTexScale, screenY * shadowTexScale);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowTex, 0);
     glDrawBuffer(GL_NONE);
+    
     glEnable(GL_POLYGON_OFFSET_FILL); //fighting shadow artifacts
-	glPolygonOffset(factor, units);	  
+    glPolygonOffset(factor, units);	  
     passOne();
-
     glDisable(GL_POLYGON_OFFSET_FILL);	
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, screenX, screenY);
 
@@ -478,33 +491,23 @@ void Context::setupVertices() {
         textures.push_back(loadTexture(path.string().c_str()));
     }
 
-    perInstanceData = createPerInstanceData(numParticles);
-
     glGenVertexArrays(1, vao);
     glBindVertexArray(vao[0]);
     glGenBuffers(numVBOs, vbo);
 
     bindBuffers(CUBE, vbo, cubeValues, cubeTvalues, cubeNvalues, cubeInd);
-    bindBuffers(TORUS,  vbo, torusValues, torusTvalues, torusNvalues, torusInd);
+    bindBuffers(TORUS, vbo, torusValues, torusTvalues, torusNvalues, torusInd);
     bindBuffers(SPHERE, vbo, sphereValues, sphereTvalues, sphereNvalues, sphereInd);
     bindBuffers(ROOM, vbo, roomCubeValues, roomCubeTvalues, roomCubeNvalues, roomCubeInd);
     bindBuffers(PLANE, vbo, surfaceValues, surfaceTvalues, surfaceNvalues, surfaceInd);
-      
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[numVBOs - 1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertexPositions) * 4, cubeVertexPositions, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[numVBOs - 2]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeTextureCoord) * 4, cubeTextureCoord, GL_STATIC_DRAW);
 
+    perInstanceData = createPerInstanceData(numParticles);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[numVBOs - 3]);
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        perInstanceData.size() * sizeof(glm::vec3),
-        perInstanceData.data(),
-        GL_STATIC_DRAW
-    );
+    glBufferData(GL_ARRAY_BUFFER, perInstanceData.size() * sizeof(glm::vec3), perInstanceData.data(), GL_STATIC_DRAW);
 
     createShaderStorageBuffers(numParticles);
+    // createShaderStorageBuffers2(numParticles);
 
     glfwGetFramebufferSize(_window, &screenX, &screenY);
     aspect = (float)screenX / (float)screenY;
@@ -691,6 +694,10 @@ void Context::passTwo() {
     while (!mvStack.empty()) {
         mvStack.pop();
     };
+}
+
+void updateShaderStorageBuffer() {
+
 }
 
 void Context::createTransformations() {

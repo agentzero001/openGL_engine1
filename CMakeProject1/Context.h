@@ -52,9 +52,10 @@ class Context {
 		void createTransformations();
 		void passOne(void);
 		void passTwo(void);
+		void updateShaderStorageBuffer();
 
 		GLFWwindow* _window;
-		GLuint renderingProgram1, renderingProgram2, renderingProgramCube, renderingProgramInstanced;
+		GLuint renderingProgram1, renderingProgram2, renderingProgramCube, renderingProgramInstanced, computeShaderProgram;
 		GLuint vao[numVAOs];
 		GLuint vbo[numVBOs];
 
@@ -64,6 +65,8 @@ class Context {
 		GLuint globalAmbLoc, ambLoc, diffLoc, specLoc, posLoc;
 		GLuint mAmbLoc, mDiffLoc, mSpecLoc, mShiLoc;
 		GLuint isInstancedLoc, startTimeLoc;
+
+		GLuint startTimeLocC, tfLocC;
 
 		std::vector<GLuint> textures;
 		GLuint cubeMapTexture;

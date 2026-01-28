@@ -1,13 +1,17 @@
 #version 430
 
 struct Particle {
-	// vec3 position;
+	vec3 position;
 	vec3 velocity;
     // vec4 color;
 };
 
-layout(std430, binding = 0) buffer ParticleBuffer {
-    Particle particles[];
+// layout(std430, binding = 0) buffer ParticleBuffer1 {
+//     Particle sphereParticles[];
+// };
+
+layout(std430, binding = 0) buffer ParticleBuffer2 {
+    Particle rainParticles[];
 };
 
 layout (location = 0) in vec3 vertPos;
@@ -54,8 +58,8 @@ uniform mat4 norm_matrix;
 uniform mat4 shadow_mvp;
 
 uniform bool isInstanced;
-uniform bool startTime;
-uniform float dt;
+// uniform bool startTime;
+// uniform float dt;
 
 mat4 buildRotateX(float rad);
 mat4 buildRotateY(float rad);
@@ -67,7 +71,6 @@ mat4 final_norm_matrix;
 
 vec3 Xnormal = vec3(1.0, 0.0, 0.0);
 float S = 10.0;
-
 
 
 //phong shading
@@ -130,33 +133,29 @@ mat4 buildTranslate(float x, float y, float z) {
     return trans;
 }
 
+mat4 buildTranslate(vec3 pos) {
+    mat4 trans = mat4(1.0, 0.0, 0.0, 0.0,
+                      0.0, 1.0, 0.0, 0.0,
+                      0.0, 0.0, 1.0, 0.0,
+                      pos.x,  pos.y,  pos.z,   1.0);
+    return trans;
+}
+
 mat4 computeInstancedModelView() {
   
-    float speed = startTime ? dt : 0.0;
-
-    // int i = gl_InstanceID;
-    Particle particle = particles[gl_InstanceID];
-
-    // float a = sin(203.0 * i * dt / 8000.0) * 10.0;
-    // float b = sin(301.0 * i * dt / 4001.0) * 10.0;
-    // float c = sin(400.0 * i * dt / 6003.0) * 10.0;
-
-    mat4 localRotY = buildRotateY(speed * 0.5);
-    mat4 localRotZ = buildRotateZ(speed * 0.2);
-
+    // float speed = startTime ? dt * 60.0 : 0.0;
+    // mat4 localRotY = buildRotateY(speed * 0.5);
+    // mat4 localRotZ = buildRotateZ(speed * 0.2);
     // vec3 dir = (localRotY * vec4(instanceData.xyz, 1.0)).xyz;
     // vec3 offset = instanceData * speed * 60.0;
-    vec3 offset = particle.velocity * speed * 60.0;
     // vec3 offset = dir * speed * 60.0;
-
     // if (offset.x >= S && abs(offset.y) <= S && abs(offset.z) <= S) {
     //     offset = reflect(offset, Xnormal);
     // }
-    
     // mat4 localTrans = buildTranslate(a, b, c);
     // return v_matrix * (localTrans * localRotX * localRotY * localRotZ);
-
-    mat4 localTrans = buildTranslate(offset.x, offset.y, offset.z);
-    return v_matrix * localRotY * localTrans;
+    
+    mat4 initialPos = buildTranslate(rainParticles[gl_InstanceID].position);
+    return v_matrix * initialPos;
 }
 

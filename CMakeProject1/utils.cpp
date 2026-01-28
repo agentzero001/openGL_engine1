@@ -32,7 +32,7 @@ void printProgramLog(int prog) {
 
 
 
-bool CheckOpenGLError() {
+bool checkOpenGLError() {
     bool foundError = false;
     int glErr = glGetError();
     while (glErr != GL_NO_ERROR) {
@@ -77,7 +77,7 @@ GLuint createShaderProgram(const char *vp, const char *fp) {
 
 
     glCompileShader(vShader);
-    CheckOpenGLError();
+    checkOpenGLError();
     glGetShaderiv(vShader, GL_COMPILE_STATUS, &vertCompiled);
     if (vertCompiled != 1) {
         cout << "vertex compilation failed" << endl;
@@ -85,7 +85,7 @@ GLuint createShaderProgram(const char *vp, const char *fp) {
     }
 
     glCompileShader(fShader);
-    CheckOpenGLError();
+    checkOpenGLError();
     glGetShaderiv(fShader, GL_COMPILE_STATUS, &fragCompiled);
     if (fragCompiled != 1) {
         cout << "fragment compilation failed" << endl;
@@ -107,3 +107,45 @@ GLuint createShaderProgram(const char *vp, const char *fp) {
 
 
 
+GLuint createShaderProgramC(const char* cp) {
+    GLuint cShader = prepareShader(GL_COMPUTE_SHADER, cp);
+    GLuint cProgram = glCreateProgram();
+    glAttachShader(cProgram, cShader);
+    finalizeShaderProgram(cProgram);
+    return cProgram;
+}
+
+GLuint prepareShader(int shaderTYPE, const char *shaderPath) {
+    GLint shaderCompiled;
+    string shaderStr = readShaderSource(shaderPath);
+    const char *shaderSrc = shaderStr.c_str();
+    GLuint shaderRef = glCreateShader(shaderTYPE);
+    glShaderSource(shaderRef, 1, &shaderSrc, NULL);
+    glCompileShader(shaderRef);
+    checkOpenGLError();
+    glGetShaderiv(shaderRef, GL_COMPILE_STATUS, &shaderCompiled);
+    if (shaderCompiled != 1)
+    {
+        if (shaderTYPE == 35633) cout << "Vertex ";
+        if (shaderTYPE == 36488) cout << "Tess Control ";
+        if (shaderTYPE == 36487) cout << "Tess Eval ";
+        if (shaderTYPE == 36313) cout << "Geometry ";
+        if (shaderTYPE == 35632) cout << "Fragment ";
+        cout << "shader compilation error." << endl;
+        printShaderLog(shaderRef);
+    }
+    return shaderRef;
+}
+
+
+int finalizeShaderProgram(GLuint sprogram) {
+	GLint linked;
+	glLinkProgram(sprogram);
+	checkOpenGLError();
+	glGetProgramiv(sprogram, GL_LINK_STATUS, &linked);
+	if (linked != 1) {
+		cout << "linking failed" << endl;
+		printProgramLog(sprogram);
+	}
+	return sprogram;
+}

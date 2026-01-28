@@ -30,7 +30,7 @@ namespace fs = std::filesystem;
 inline const fs::path TextureDir = "C:/Users/jensm/source/repos/CMakeProject1/res/textures";
 
 inline const fs::path BRICK_TEXTURE  = TextureDir / "brick.jpg";
-inline const fs::path GRASS_TEXTURE  = TextureDir / "onyx.png";
+inline const fs::path GRASS_TEXTURE  = TextureDir / "onyxBlack.png";
 inline const fs::path EARTH_TEXTURE  = TextureDir / "earth.jpg";
 inline const fs::path SUN_TEXTURE    = TextureDir / "sun.png";
 inline const fs::path MOON_TEXTURE   = TextureDir / "moon.jpg";
@@ -72,9 +72,11 @@ struct Vertex {
 };
 
 struct Particle {
-    // glm::vec3 pos;
+    alignas(16)glm::vec3 pos;
     alignas(16) glm::vec3 velocity;
-    // glm::vec4 color;
+    // bool isActive;
+    // float aliveTime;
+    // float age;
 };
 
 namespace std {
@@ -97,10 +99,15 @@ void bindBuffers(
     std::vector<float>& vertValues,
     std::vector<float>& texValues,
     std::vector<float>& normValues,
-    std::vector<int>& ind );
+    std::vector<int>& ind
+);
+
+// void bindStorageBuffer(GLuint *vbo);
 
 std::vector<glm::vec3> createPerInstanceData(int numParticles);
 void createShaderStorageBuffers(int numParticles);
+void createShaderStorageBuffers2(int numParticles);
+
 
 extern const std::vector<Vertex> surfaceVertices;
 extern const std::vector<uint16_t> surfaceIndices;
