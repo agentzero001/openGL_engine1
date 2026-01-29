@@ -237,7 +237,7 @@ void createShaderStorageBuffers(int numParticles) {
     glBufferData(GL_SHADER_STORAGE_BUFFER, numParticles * sizeof(Particle), particles.data(), GL_DYNAMIC_DRAW); 
 
     //bind buffer to shader
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, instanceSSBO);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, instanceSSBO);
 
 }
 
@@ -246,15 +246,39 @@ void createShaderStorageBuffers2(int numParticles) {
     std::vector<Particle> particles(numParticles);
     std::default_random_engine rndEngine((unsigned)time(nullptr));
 	std::uniform_real_distribution<float> rndDist(-1.0f, 1.0f);
+    std::uniform_real_distribution<float> rndDist2(0.0f, 1.0f);
 
     for (auto& particle: particles) {
-        float x = rndDist(rndEngine) * 60.0;
-        float z = rndDist(rndEngine) * 60.0;
+        float x = rndDist(rndEngine) * 120.0;
+        float y = rndDist(rndEngine) * 120.0;
+        float z = rndDist(rndEngine) * 120.0;
+
         
-        particle.pos = glm::vec3(x, 20.0, z);
-        particle.velocity = glm::vec3(0.0, -.2, 0.0);
+        particle.pos = glm::vec3(x, y, z);
+
+        float u = rndDist2(rndEngine);
+        float v = rndDist2(rndEngine);
+        float w = rndDist2(rndEngine);
+
+        float radius = 0.25f * std::cbrt(u);
+
+        // Spherical coordinates
+        float theta = 2.0f * 3.14159265358979323846f * v;   
+        float phi   = std::acos(1.0f - 2.0f * w);         
+
+        // Convert to Cartesian coordinates
+        float x2 = radius * std::sin(phi) * std::cos(theta);
+        float y2 = radius * std::sin(phi) * std::sin(theta);
+        float z2 = radius * std::cos(phi);
+
+        particle.velocity2 = glm::vec3(x2, y2, z2);
+        particle.velocity = glm::vec3(0.0, -.1, 0.0);
 
     }
+
+
+
+    
 
     GLuint instanceSSBO = 0;
     

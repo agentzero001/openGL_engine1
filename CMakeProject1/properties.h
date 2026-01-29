@@ -51,6 +51,7 @@ extern bool spacePressedLastFrame;
 extern bool lookAtCenter;
 extern bool spacePressedNow;
 extern bool kPressed;
+extern bool jPressed;
 
 extern float scaleFactorCubes;
 

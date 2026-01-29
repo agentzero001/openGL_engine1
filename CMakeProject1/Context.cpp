@@ -72,7 +72,7 @@ int screenX, screenY;
 
 float lightFOV = 1.0472f * 2.0;
 
-int numParticles = 500;
+int numParticles = 20000;
 
 auto f = [](float t) -> glm::vec3 { return glm::vec3(earthX(t), earthY(t), earthZ(t)); };
 auto ft = [](float t) -> glm::vec3 { return glm::vec3(earthX(t- PI*2.0f), earthY(t), earthZ(t- PI*2.0f)); };
@@ -81,7 +81,7 @@ auto f2t = [](float t) -> glm::vec3 { return glm::vec3(20.0f* cos(cos(-t )- PI),
 auto fm = [](float t) -> glm::vec3 { return glm::vec3(moonX(t), moonY(t), moonZ(t)); };
 
 auto sFunc1 = [] (float t) -> float {return (sin(t * 20.0f) * .5 ) + 1.0f; };
-auto constantT = [] (float t) -> float {return t*4.0f; };
+auto constantT = [] (float t) -> float {return t; };
 auto constantOne = [] (float t) -> float {return 1.0f; };
 auto constantHalf = [] (float t) -> float {return 0.5f; };
 auto constantZero = [] (float t) -> float {return 0.0f; };
@@ -134,11 +134,6 @@ void Context::init() {
 		"C:/Users/jensm/source/repos/CMakeProject1/res/shaders/cubeMapShader.frag"
 	);
 
-    renderingProgramInstanced = createShaderProgram(
-		"C:/Users/jensm/source/repos/CMakeProject1/res/shaders/instance.vert",
-		"C:/Users/jensm/source/repos/CMakeProject1/res/shaders/instance.frag"
-	);
-
     computeShaderProgram = createShaderProgramC(
         "C:/Users/jensm/source/repos/CMakeProject1/res/shaders/computeShader.comp"
     );
@@ -146,7 +141,6 @@ void Context::init() {
     
     setupVertices();
     setupShadowBuffers(screenX, screenY, shadowBuffer, shadowTex, shadowTexScale);
-    // setupShadowBuffers();
 
     mvLoc = glGetUniformLocation(renderingProgram1, "mv_matrix");
     vLoc =  glGetUniformLocation(renderingProgram1, "v_matrix");
@@ -155,6 +149,7 @@ void Context::init() {
     tfLoc = glGetUniformLocation(renderingProgram1, "dt");
     isInstancedLoc = glGetUniformLocation(renderingProgram1, "isInstanced");
     startTimeLoc = glGetUniformLocation(renderingProgram1, "startTime");
+    
     
     //shadow mvp
     sLoc1 = glGetUniformLocation(renderingProgram1, "shadow_mvp");
@@ -173,12 +168,10 @@ void Context::init() {
     mvLocCube = glGetUniformLocation(renderingProgramCube, "mv_matrix");
 	projLocCube = glGetUniformLocation(renderingProgramCube, "proj_matrix");
 
-    vLocInstanced = glGetUniformLocation(renderingProgramInstanced, "v_matrix");
-	projLocInstanced = glGetUniformLocation(renderingProgramInstanced, "proj_matrix");
-    tfLocInstanced = glGetUniformLocation(renderingProgramInstanced, "tf");
-
     startTimeLocC = glGetUniformLocation(computeShaderProgram, "startTime");
+    switchVelocityLocC = glGetUniformLocation(computeShaderProgram, "switchVelocity");
     tfLocC = glGetUniformLocation(computeShaderProgram, "dt");
+
 
     createTransformations();
 }
@@ -190,9 +183,18 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
         d = -d;
     }
 
+    dt = glfwGetTime();
+    lookAtCenter = toggleKey(GLFW_KEY_SPACE, keyboardhandler); 
+    jPressed = toggleKey(GLFW_KEY_J, keyboardhandler);    
+    kPressed = toggleKey(GLFW_KEY_K, keyboardhandler);   
+
+
+   
+
     glUseProgram(computeShaderProgram);
     glUniform1i(startTimeLocC, GL_FALSE);
-    kPressed = keyboardHandler.isKeyPressed(GLFW_KEY_K);
+    glUniform1i(switchVelocityLocC, GL_FALSE);
+    
     if (kPressed) {
         elapsedTime = glfwGetTime() - startTime;
         glUniform1i(startTimeLocC, GL_TRUE);
@@ -201,15 +203,19 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
     }
     else startTime = (float)glfwGetTime();
 
+    if (jPressed) {
+        glUniform1i(switchVelocityLocC, GL_TRUE);
+    }
+
     glDispatchCompute(numParticles, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS); 
 
-    spacePressedNow = keyboardHandler.isKeyPressed(GLFW_KEY_SPACE);
-    if (spacePressedNow && !spacePressedLastFrame) {
-        lookAtCenter = !lookAtCenter; 
-    }
-    spacePressedLastFrame = spacePressedNow;       
-
+    // spacePressedNow = keyboardHandler.isKeyPressed(GLFW_KEY_SPACE);
+    // if (spacePressedNow && !spacePressedLastFrame) {
+    //     lookAtCenter = !lookAtCenter; 
+    // }
+    // spacePressedLastFrame = spacePressedNow;
+    
     glClear(GL_DEPTH_BUFFER_BIT);
     // glClearColor(0.1f, 0.1f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -506,8 +512,8 @@ void Context::setupVertices() {
     glBindBuffer(GL_ARRAY_BUFFER, vbo[numVBOs - 3]);
     glBufferData(GL_ARRAY_BUFFER, perInstanceData.size() * sizeof(glm::vec3), perInstanceData.data(), GL_STATIC_DRAW);
 
-    createShaderStorageBuffers(numParticles);
-    // createShaderStorageBuffers2(numParticles);
+    // createShaderStorageBuffers(numParticles);
+    createShaderStorageBuffers2(numParticles);
 
     glfwGetFramebufferSize(_window, &screenX, &screenY);
     aspect = (float)screenX / (float)screenY;
@@ -623,6 +629,7 @@ void Context::passTwo() {
     glActiveTexture(GL_TEXTURE0);
     installLights(vMat);
     mvStack.push(vMat);  
+    glUniform1f(tfLoc, startTime);
 
     // drawObject(mvStack, t1, 0, torus.getNumIndices(), 0);
     // drawObject(mvStack, t3, 0, torus.getNumIndices(), 0);
@@ -688,17 +695,15 @@ void Context::passTwo() {
     drawObjectsInstanced(SPHERE, ONYX, sphereInd.size());
     // mvStack.pop();
 
-    glFrontFace(GL_CW);
-    drawObject(mvStack, t6, ROOM, roomCubeInd.size(), GRASS);
+    // glFrontFace(GL_CW);
+    // drawObject(mvStack, t6, ROOM, roomCubeInd.size(), GRASS);
     
     while (!mvStack.empty()) {
         mvStack.pop();
     };
 }
 
-void updateShaderStorageBuffer() {
 
-}
 
 void Context::createTransformations() {
 
@@ -708,7 +713,7 @@ void Context::createTransformations() {
     t3 = new Transform(f2, constantHalf, constantT, rotationX);
     t4 = new Transform(ft, constantOne, constantT, rotationY);
     t5 = new Transform(f2t, constantHalf, constantT, rotationX);
-    tLight = new Transform(getLightPos, constantTen, constantZero, rotationX);
+    tLight = new Transform(getLightPos, constantTen, constantZero, rotationZ);
 
     surfaceTransform1 = new Transform(glm::vec3(0.0f, 10.0f, 0.0f), 3.0f, -PIhalf/2.0f, rotationX);
     surfaceTransform2 = new Transform(surfacePos, constantX, constantT, rotationZ);

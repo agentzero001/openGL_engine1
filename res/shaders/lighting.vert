@@ -3,14 +3,14 @@
 struct Particle {
 	vec3 position;
 	vec3 velocity;
-    // vec4 color;
+    vec3 velocity2;
 };
 
 // layout(std430, binding = 0) buffer ParticleBuffer1 {
 //     Particle sphereParticles[];
 // };
 
-layout(std430, binding = 0) buffer ParticleBuffer2 {
+layout(std430, binding = 1) buffer ParticleBuffer2 {
     Particle rainParticles[];
 };
 
@@ -59,7 +59,7 @@ uniform mat4 shadow_mvp;
 
 uniform bool isInstanced;
 // uniform bool startTime;
-// uniform float dt;
+uniform float dt;
 
 mat4 buildRotateX(float rad);
 mat4 buildRotateY(float rad);
@@ -144,7 +144,7 @@ mat4 buildTranslate(vec3 pos) {
 mat4 computeInstancedModelView() {
   
     // float speed = startTime ? dt * 60.0 : 0.0;
-    // mat4 localRotY = buildRotateY(speed * 0.5);
+    mat4 localRotY = buildRotateY(dt);
     // mat4 localRotZ = buildRotateZ(speed * 0.2);
     // vec3 dir = (localRotY * vec4(instanceData.xyz, 1.0)).xyz;
     // vec3 offset = instanceData * speed * 60.0;
@@ -154,8 +154,8 @@ mat4 computeInstancedModelView() {
     // }
     // mat4 localTrans = buildTranslate(a, b, c);
     // return v_matrix * (localTrans * localRotX * localRotY * localRotZ);
-    
+
     mat4 initialPos = buildTranslate(rainParticles[gl_InstanceID].position);
-    return v_matrix * initialPos;
+    return v_matrix * initialPos * localRotY;
 }
 

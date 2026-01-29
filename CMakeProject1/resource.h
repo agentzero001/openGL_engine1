@@ -74,6 +74,7 @@ struct Vertex {
 struct Particle {
     alignas(16)glm::vec3 pos;
     alignas(16) glm::vec3 velocity;
+    alignas(16) glm::vec3 velocity2;
     // bool isActive;
     // float aliveTime;
     // float age;

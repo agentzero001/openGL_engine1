@@ -66,7 +66,7 @@ class Context {
 		GLuint mAmbLoc, mDiffLoc, mSpecLoc, mShiLoc;
 		GLuint isInstancedLoc, startTimeLoc;
 
-		GLuint startTimeLocC, tfLocC;
+		GLuint startTimeLocC, tfLocC, switchVelocityLocC;
 
 		std::vector<GLuint> textures;
 		GLuint cubeMapTexture;

@@ -149,3 +149,17 @@ int finalizeShaderProgram(GLuint sprogram) {
 	}
 	return sprogram;
 }
+
+bool toggleKey(int key, KeyboardHandler& keyboardHandler) {
+    static std::unordered_map<int, bool> lastPressed;
+    static std::unordered_map<int, bool> toggledState;
+
+    bool pressedNow = keyboardHandler.isKeyPressed(key);
+
+    if (pressedNow && !lastPressed[key]) {
+        toggledState[key] = !toggledState[key];
+    }
+
+    lastPressed[key] = pressedNow;
+    return toggledState[key];
+}

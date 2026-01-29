@@ -53,6 +53,9 @@ bool spacePressedLastFrame = false;
 bool lookAtCenter = false;
 bool spacePressedNow = false;
 bool kPressed = false;
+bool kPressedLastFrame = false;
+bool jPressed = false;
+
 
 float scaleFactorCubes = .4f;
 
