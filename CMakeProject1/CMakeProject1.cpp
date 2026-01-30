@@ -11,14 +11,19 @@ int main() {
 	Context* context;
 	GLFWwindow* window;
 
-	int WIDTH = 800;
-	int HEIGHT = 800;
+	int WIDTH = 1920;
+	int HEIGHT = 1080;
 	std::cout << "hola" << std::endl;
 	if (!glfwInit()) { exit(EXIT_FAILURE); };
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_SAMPLES, 4);
-	window = glfwCreateWindow(WIDTH, HEIGHT, "whatever", NULL, NULL);
+	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+	
+
+	window = glfwCreateWindow(mode->width, mode->height, "whatever", nullptr, NULL);
 	glfwMakeContextCurrent(window);
 	if (glewInit() != GLEW_OK) {exit(EXIT_FAILURE);}
 	glfwSwapInterval(1);

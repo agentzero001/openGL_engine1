@@ -72,7 +72,7 @@ int screenX, screenY;
 
 float lightFOV = 1.0472f * 2.0;
 
-int numParticles = 20000;
+int numParticles = 50000;
 
 auto f = [](float t) -> glm::vec3 { return glm::vec3(earthX(t), earthY(t), earthZ(t)); };
 auto ft = [](float t) -> glm::vec3 { return glm::vec3(earthX(t- PI*2.0f), earthY(t), earthZ(t- PI*2.0f)); };
@@ -187,8 +187,6 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
     lookAtCenter = toggleKey(GLFW_KEY_SPACE, keyboardhandler); 
     jPressed = toggleKey(GLFW_KEY_J, keyboardhandler);    
     kPressed = toggleKey(GLFW_KEY_K, keyboardhandler);   
-
-
    
 
     glUseProgram(computeShaderProgram);
@@ -196,7 +194,7 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
     glUniform1i(switchVelocityLocC, GL_FALSE);
     
     if (kPressed) {
-        elapsedTime = glfwGetTime() - startTime;
+        elapsedTime = (float)glfwGetTime() - startTime;
         glUniform1i(startTimeLocC, GL_TRUE);
         glUniform1f(tfLocC, elapsedTime);
         std::cout << elapsedTime << std::endl;
@@ -209,19 +207,13 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
 
     glDispatchCompute(numParticles, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS); 
-
-    // spacePressedNow = keyboardHandler.isKeyPressed(GLFW_KEY_SPACE);
-    // if (spacePressedNow && !spacePressedLastFrame) {
-    //     lookAtCenter = !lookAtCenter; 
-    // }
-    // spacePressedLastFrame = spacePressedNow;
     
     glClear(GL_DEPTH_BUFFER_BIT);
-    // glClearColor(0.1f, 0.1f, 0.0f, 1.0f);
+    glClearColor(0.1f, 0.1f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CCW);
-    // glEnable(GL_MULTISAMPLE);
+    glEnable(GL_MULTISAMPLE);
 
     if (!lookAtCenter) { vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));}
     // else               { vMat = glm::lookAt(glm::vec3(cameraX, cameraY, cameraZ), f(dt), up);}
@@ -279,7 +271,7 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
     ImGui::SliderFloat("cycle Speed", &rSpeed, 0, 6);
     ImGui::SliderFloat("lightPosX", &currentLightPos.x, -5, 80);
     ImGui::SliderFloat("lightPosY", &currentLightPos.y, -30, 80);
-    ImGui::SliderFloat("lightPosZ", &currentLightPos.z, -30, 80);
+    ImGui::SliderFloat("lightPosZ", &currentLightPos.z, -30, 200);
     ImGui::SliderFloat("factor", &factor, 0, 20);
     ImGui::SliderFloat("units", &units, 0, 20);
     ImGui::Text("LightPosV.x: %2f", lightPosV.x);
@@ -318,7 +310,7 @@ void Context::drawObject(std::stack<glm::mat4>& mvStack, Transform* transform, i
  
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(id * 4) + 1]);  
     
-    glDisableVertexAttribArray(3);
+    // glDisableVertexAttribArray(3);
     //to tell openGL which buffer contains the indices
     //openGL is able to recognize the presence of a GL_ELEMENT_ARRAY_BUFFER and utilize it to access the vertex attributes
     glDrawElements(GL_TRIANGLES, numVertices, GL_UNSIGNED_INT, 0); 
@@ -350,13 +342,12 @@ void Context::drawObjectsInstanced(int id, int texId, int numVertices) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(id * 4) + 1]);   
 
     //perInstance data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[numVBOs - 3]);
-    glVertexAttribPointer(3, 3, GL_FLOAT,GL_FALSE, sizeof(glm::vec3), (void*)0);
-    glVertexAttribDivisor(3, 1);
-    glEnableVertexAttribArray(3);
+    // glBindBuffer(GL_ARRAY_BUFFER, vbo[numVBOs - 3]);
+    // glVertexAttribPointer(3, 3, GL_FLOAT,GL_FALSE, sizeof(glm::vec3), (void*)0);
+    // glVertexAttribDivisor(3, 1);
+    // glEnableVertexAttribArray(3);
 
     glDrawElementsInstanced(GL_TRIANGLES, numVertices, GL_UNSIGNED_INT, 0, numParticles);
-    // glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 10);
 }
 
 void Context::drawObjectShadow(std::stack<glm::mat4>& mvStack, Transform* transform, int id, int numVertices) {   
@@ -404,7 +395,6 @@ void Context::drawCubeMap() {
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glEnable(GL_DEPTH_TEST);
 }
-
 
 void Context::setupVertices() {
 
@@ -508,19 +498,19 @@ void Context::setupVertices() {
     bindBuffers(PLANE, vbo, surfaceValues, surfaceTvalues, surfaceNvalues, surfaceInd);
 
 
-    perInstanceData = createPerInstanceData(numParticles);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[numVBOs - 3]);
-    glBufferData(GL_ARRAY_BUFFER, perInstanceData.size() * sizeof(glm::vec3), perInstanceData.data(), GL_STATIC_DRAW);
+    // perInstanceData = createPerInstanceData(numParticles);
+    // glBindBuffer(GL_ARRAY_BUFFER, vbo[numVBOs - 3]);
+    // glBufferData(GL_ARRAY_BUFFER, perInstanceData.size() * sizeof(glm::vec3), perInstanceData.data(), GL_STATIC_DRAW);
 
-    // createShaderStorageBuffers(numParticles);
-    createShaderStorageBuffers2(numParticles);
+    createShaderStorageBuffers(numParticles);
+    // createShaderStorageBuffers2(numParticles);
 
     glfwGetFramebufferSize(_window, &screenX, &screenY);
+    std::cout << screenX;
     aspect = (float)screenX / (float)screenY;
     pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f); //1.0472 rad = 60 deg
     lightPmatrix = glm::perspective(lightFOV, aspect, 0.1f, 1000.0f); //1.0472 rad = 60 deg
 }
-
 
 void window_reshape_callback(GLFWwindow* window, int newWidth, int newHeight) {
 	aspect = (float)newWidth / (float)newHeight;

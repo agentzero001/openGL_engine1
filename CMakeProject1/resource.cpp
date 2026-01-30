@@ -202,29 +202,14 @@ void createShaderStorageBuffers(int numParticles) {
 
     std::vector<Particle> particles(numParticles);
     std::default_random_engine rndEngine((unsigned)time(nullptr));
-	std::uniform_real_distribution<float> rndDist(0.0f, 1.0f);
+	std::uniform_real_distribution<float> rndDist(-1.0f, 1.0f);
 
     for (auto& particle: particles) {
-        float u = rndDist(rndEngine);
-        float v = rndDist(rndEngine);
-        float w = rndDist(rndEngine);
-
-        float radius = 0.25f * std::cbrt(u);
-
-        // Spherical coordinates
-        float theta = 2.0f * 3.14159265358979323846f * v;   
-        float phi   = std::acos(1.0f - 2.0f * w);         
-
-        // Convert to Cartesian coordinates
-        float x = radius * std::sin(phi) * std::cos(theta);
-        float y = radius * std::sin(phi) * std::sin(theta);
-        float z = radius * std::cos(phi);
-
-        particle.velocity = glm::vec3(x, y, z);
-        particle.pos = glm::vec3(0.1, 0.1, 0.1);
-        // particle.isActive = true;
-        
-
+        float x = rndDist(rndEngine) * 75.0;
+        float z = rndDist(rndEngine) * 75.0;
+        particle.pos = glm::vec3(x, 0.0, z);
+        particle.velocity = glm::vec3(0.0, 1.0, 0.0);
+        particle.velocity2 = glm::vec3(0.0, 0.0, 1.0);
     }
 
     GLuint instanceSSBO = 0;
@@ -249,13 +234,12 @@ void createShaderStorageBuffers2(int numParticles) {
     std::uniform_real_distribution<float> rndDist2(0.0f, 1.0f);
 
     for (auto& particle: particles) {
-        float x = rndDist(rndEngine) * 120.0;
-        float y = rndDist(rndEngine) * 120.0;
-        float z = rndDist(rndEngine) * 120.0;
-
-        
+        float x = rndDist(rndEngine) * 250.0;
+        float y = rndDist(rndEngine) * 250.0;
+        float z = rndDist(rndEngine) * 250.0;
         particle.pos = glm::vec3(x, y, z);
 
+        
         float u = rndDist2(rndEngine);
         float v = rndDist2(rndEngine);
         float w = rndDist2(rndEngine);
@@ -272,13 +256,9 @@ void createShaderStorageBuffers2(int numParticles) {
         float z2 = radius * std::cos(phi);
 
         particle.velocity2 = glm::vec3(x2, y2, z2);
-        particle.velocity = glm::vec3(0.0, -.1, 0.0);
+        particle.velocity = glm::vec3(-.03, -.1, 0.0);
 
-    }
-
-
-
-    
+    }    
 
     GLuint instanceSSBO = 0;
     

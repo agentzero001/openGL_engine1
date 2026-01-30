@@ -25,17 +25,20 @@ void main() {
 
     if (startTime) {
         vec3 dir = normalize(-rainParticles[id].position);
-        pos += dir * .2;
+        pos += dir * .05;
     } 
     // pos += rainParticles[id].velocity;
     else {
-        pos -= rainParticles[id].velocity;
-        if (pos.y >= 120.0) pos.y = -120.0;
+       if (switchVelocity) {
+        pos -= rainParticles[id].velocity * .1;;
+        }
+        else {
+            pos += rainParticles[id].velocity * .1;
+        }
     }
 
-    if (switchVelocity) {
-        pos += rainParticles[id].velocity2 * 3.0;
-    }
+    if (pos.y <= -50.0) pos.y = 50.0;
+    
 
     // if (pos.y <= -40.0)
     //     pos.y = 20.0;

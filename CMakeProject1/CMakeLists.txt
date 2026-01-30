@@ -17,13 +17,12 @@ add_executable (
   "CMakeProject1.cpp"
   "Context.cpp"
   "utils.cpp"
-  "draw.h"
   "keyboard.cpp"
   "properties.cpp"
-  "torus.cpp"
-  "sphere.cpp"
   "resource.cpp"
-  "particleSSBO.cpp"
+  "modelGen/Leaf.cpp"
+  "modelGen/Sphere.cpp"
+  "modelGen/Torus.cpp"
   ImGui/imgui.cpp
   ImGui/imgui_draw.cpp
   ImGui/imgui_tables.cpp

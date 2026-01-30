@@ -2,6 +2,8 @@
 
 using namespace std;
 
+constexpr int MAX_KEYS = 256;
+
 
 void printShaderLog(GLuint shader) {
     int len = 0;
@@ -151,8 +153,9 @@ int finalizeShaderProgram(GLuint sprogram) {
 }
 
 bool toggleKey(int key, KeyboardHandler& keyboardHandler) {
-    static std::unordered_map<int, bool> lastPressed;
-    static std::unordered_map<int, bool> toggledState;
+    static bool lastPressed[MAX_KEYS]{};
+    static bool toggledState[MAX_KEYS]{};
+
 
     bool pressedNow = keyboardHandler.isKeyPressed(key);
 
