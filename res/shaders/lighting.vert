@@ -75,8 +75,6 @@ float S = 10.0;
 
 //phong shading
 void main(void) {
-
-
     if (!isInstanced){
         final_mv_matrix = mv_matrix;
         final_norm_matrix = norm_matrix;
@@ -85,7 +83,6 @@ void main(void) {
         final_mv_matrix = computeInstancedModelView();
         final_norm_matrix = transpose(inverse(final_mv_matrix));
     }
-
     vec4 P = final_mv_matrix * vec4(vertPos, 1.0);
     varyingVertPos = P.xyz;
     varyingLightDir = light.position - varyingVertPos;
@@ -94,7 +91,6 @@ void main(void) {
     shadow_coord = shadow_mvp * vec4(vertPos, 1.0);
     gl_Position = proj_matrix * P; 
     tc = texCoord;
-
 }
 
 // builds and returns a matrix that performs a rotation around the X axis

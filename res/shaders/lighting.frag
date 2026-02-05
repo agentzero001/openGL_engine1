@@ -44,13 +44,17 @@ uniform float tf;
 vec4 textureColor;
 vec4 lightColor;
 
+
+
 //phong shading
 void main(void) {
+
     vec3 L = normalize(varyingLightDir);
     vec3 N = normalize(varyingNormal);
     vec3 V = normalize(-varyingVertPos);
     vec3 H = normalize(varyingHalfVector);
 
+    if (!gl_FrontFacing) N = -N;
     float notInShadow = textureProj(shTex, shadow_coord);
 
     //R can be omitted using dot(H, N) instead of dot(V, R).
@@ -63,13 +67,13 @@ void main(void) {
     vec3 specular = material.specular.xyz * light.specular.xyz * pow(max(cosPhi, 0.0f), material.shininess);
 
     // color = vec4((ambient + diffuse + specular), 1.0f);
-    textureColor = texture(samp, tc);
+    // textureColor = texture(samp, tc);
     lightColor = vec4((diffuse + specular), 1.0f);
-    color = 0.4 * textureColor + 0.2 * vec4(ambient, 1.0f);
+    // color = 0.4 * textureColor + 0.2 * vec4(ambient, 1.0f);
+    color = vec4(ambient, 1.0f);
     if (notInShadow == 1.0) {
         color += 0.5 * lightColor;
     }
-
 }
 
 

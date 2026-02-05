@@ -17,7 +17,7 @@
 #include <filesystem>
 
 inline std::string ROOM_CUBE_PATH = "C:/Users/jensm/source/repos/CMakeProject1/res/models/roomCube.obj";
-inline std::string CUBE_PATH = "C:/Users/jensm/source/repos/CMakeProject1/res/models/cube.obj";
+inline std::string CUBE_PATH = "C:/Users/jensm/source/repos/CMakeProject1/res/models/untitled.obj";
 inline const std::string BRICK_TEXTURE_PATH =  std::string(RESOURCE_DIR) + "/textures/brick.jpg";
 // inline const char* GRASS_TEXTURE_PATH = "C:/Users/jensm/source/repos/CMakeProject1/res/textures/grass.jpg";
 // inline const char* EARTH_TEXTURE_PATH = "C:/Users/jensm/source/repos/CMakeProject1/res/textures/earth.jpg";
@@ -109,9 +109,14 @@ std::vector<glm::vec3> createPerInstanceData(int numParticles);
 void createShaderStorageBuffers(int numParticles);
 void createShaderStorageBuffers2(int numParticles);
 
+std::vector<Vertex> computeNormals(std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices);
+
 
 extern const std::vector<Vertex> surfaceVertices;
 extern const std::vector<uint16_t> surfaceIndices;
+
+extern std::vector<Vertex> tetraVertices;
+extern const std::vector<uint16_t> tetraIndices;
 
 
 extern float vertexPositions[108];

@@ -10,13 +10,14 @@ float aspect;
 
 glm::mat4 pMat, lightPmatrix;
 
-float* matAmb = bronzeAmbient();
-float* matDif = bronzeDiffuse();
-float* matSpe = bronzeSpecular();
-float matShi = bronzeShininess();
+float* matAmb = goldAmbient();
+float* matDif = goldDiffuse();
+float* matSpe = goldSpecular();
+float matShi = goldShininess();
 
 Torus torus(1.2f, 0.5f, 96);
-Sphere sphere(12);
+Sphere sphere(48);
+Leaf leaf(6, 2.0f, 1.0f);
 
 std::vector<float> cubeValues;
 std::vector<float> cubeNvalues;
@@ -24,7 +25,6 @@ std::vector<float> cubeTvalues;
 std::vector<int> cubeInd;
 std::vector<Vertex> cube_vertices;
 std::vector<uint32_t> cube_indices;
-
 
 std::vector<float> roomCubeValues;
 std::vector<float> roomCubeNvalues;
@@ -49,6 +49,14 @@ std::vector<glm::vec3> torusNorm;
 std::vector<glm::vec2> torusTex;
 std::vector<int> torusInd;
 
+std::vector<float> leafValues;
+std::vector<float> leafNvalues;
+std::vector<float> leafTvalues;
+std::vector<glm::vec3> leafVert;
+std::vector<glm::vec3> leafNorm; 
+std::vector<glm::vec2> leafTex;
+std::vector<int> leafInd;
+
 std::vector<float> surfaceValues;
 std::vector<float> surfaceNvalues;
 std::vector<float> surfaceTvalues;
@@ -59,19 +67,15 @@ float lastTime;
 float startTime;
 float elapsedTime;
 
+int screenX, screenY;
 GLuint shadowTex, shadowBuffer;
 
 float deltaTime = .0f;
 float lastFrame = .0f;
-
 float factor = 2.0f;
 float units = 4.0f;
-
 int shadowTexScale = 4;
-int screenX, screenY;
-
 float lightFOV = 1.0472f * 2.0;
-
 int numParticles = 50000;
 
 auto f = [](float t) -> glm::vec3 { return glm::vec3(earthX(t), earthY(t), earthZ(t)); };
@@ -88,8 +92,8 @@ auto constantZero = [] (float t) -> float {return 0.0f; };
 auto constantTen = [] (float t) -> float {return 10.0f; };
 auto constantX = [] (float t) -> float {return 5.0f; };
 
-auto getLightPos = [] (float t) -> glm::vec3 { return glm::vec3(sin(t) * 50.0f, 40.0f, 0.0f); };
-auto surfacePos = [] (float t) -> glm::vec3 { return glm::vec3(0.0f, 10.0f, 0.0f); };
+auto getLightPos = [] (float t) -> glm::vec3 { return glm::vec3(currentLightPos.x, currentLightPos.y, currentLightPos.z); };
+auto surfacePos = [] (float t) -> glm::vec3 { return glm::vec3(0.0f, 0.0f, 0.0f); };
 auto constantPIhalfN = [] (float t) -> float {return -PIhalf; };
 
 Context::Context(GLFWwindow* _window) : _window(_window), keyboardhandler(_window) {}
@@ -100,12 +104,10 @@ void Context::run() {
     glClear(GL_COLOR_BUFFER_BIT);
     glfwSwapBuffers(_window);
 	glfwPollEvents();
-
 	init();
 
 	while (!glfwWindowShouldClose(_window)) {
-
-		display(_window, keyboardhandler);//, *keyboardhandler);
+		display(_window, keyboardhandler);
 		glfwSwapBuffers(_window);
 		glfwPollEvents();
 	}
@@ -135,9 +137,8 @@ void Context::init() {
 	);
 
     computeShaderProgram = createShaderProgramC(
-        "C:/Users/jensm/source/repos/CMakeProject1/res/shaders/computeShader.comp"
+        "C:/Users/jensm/source/repos/CMakeProject1/res/shaders/computeShader.glsl"
     );
-
     
     setupVertices();
     setupShadowBuffers(screenX, screenY, shadowBuffer, shadowTex, shadowTexScale);
@@ -149,7 +150,7 @@ void Context::init() {
     tfLoc = glGetUniformLocation(renderingProgram1, "dt");
     isInstancedLoc = glGetUniformLocation(renderingProgram1, "isInstanced");
     startTimeLoc = glGetUniformLocation(renderingProgram1, "startTime");
-    
+    hasColorLoc =  glGetUniformLocation(renderingProgram1, "hasColor");
     
     //shadow mvp
     sLoc1 = glGetUniformLocation(renderingProgram1, "shadow_mvp");
@@ -172,7 +173,6 @@ void Context::init() {
     switchVelocityLocC = glGetUniformLocation(computeShaderProgram, "switchVelocity");
     tfLocC = glGetUniformLocation(computeShaderProgram, "dt");
 
-
     createTransformations();
 }
 
@@ -187,7 +187,6 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
     lookAtCenter = toggleKey(GLFW_KEY_SPACE, keyboardhandler); 
     jPressed = toggleKey(GLFW_KEY_J, keyboardhandler);    
     kPressed = toggleKey(GLFW_KEY_K, keyboardhandler);   
-   
 
     glUseProgram(computeShaderProgram);
     glUniform1i(startTimeLocC, GL_FALSE);
@@ -333,10 +332,10 @@ void Context::drawObjectsInstanced(int id, int texId, int numVertices) {
     glEnableVertexAttribArray(1);
 
     //texCoords
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[(id * 4) + 3]);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(2);
-    glBindTexture(GL_TEXTURE_2D, textures[texId]);
+    // glBindBuffer(GL_ARRAY_BUFFER, vbo[(id * 4) + 3]);
+    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    // glEnableVertexAttribArray(2);
+    // glBindTexture(GL_TEXTURE_2D, textures[texId]);
 
     //indices
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[(id * 4) + 1]);   
@@ -422,7 +421,8 @@ void Context::setupVertices() {
         cubeNvalues.push_back(vertex.norm.z);
     }
 
-    for (auto& vertex : surfaceVertices) {
+    computeNormals(tetraVertices, tetraIndices);
+    for (auto& vertex : tetraVertices) {
         surfaceValues.push_back(vertex.pos.x);
         surfaceValues.push_back(vertex.pos.y);
         surfaceValues.push_back(vertex.pos.z);
@@ -431,7 +431,9 @@ void Context::setupVertices() {
         surfaceNvalues.push_back(vertex.norm.x);
         surfaceNvalues.push_back(vertex.norm.y);
         surfaceNvalues.push_back(vertex.norm.z);
+        std::cout << vertex.norm.z << std::endl;
     }
+    
     torusInd = torus.getIndices();
     torusVert = torus.getVertices();
     torusNorm = torus.getNormals();
@@ -441,6 +443,11 @@ void Context::setupVertices() {
     sphereVert = sphere.getVertices();
     sphereNorm = sphere.getNormals();
     sphereTex = sphere.getTexCoords();
+
+    leafInd = leaf.getIndices();
+    leafVert = leaf.getVertices();
+    leafNorm = leaf.getNormals();
+    leafTex = leaf.getTexCoords();
 
     for (uint32_t i = 0; i < room_indices.size(); i++) {
         int value = room_indices[i];
@@ -452,8 +459,8 @@ void Context::setupVertices() {
         cubeInd.push_back(value);
     }
 
-    for (uint32_t i = 0; i < surfaceIndices.size(); i++) {
-        int value = surfaceIndices[i];
+    for (uint32_t i = 0; i < tetraIndices.size(); i++) {
+        int value = tetraIndices[i];
         surfaceInd.push_back(value);
     }
 
@@ -479,6 +486,18 @@ void Context::setupVertices() {
         sphereNvalues.push_back(sphereNorm[i].z);
     }
 
+    for (int i = 0; i < leaf.getNumVertices(); i++) {
+        leafValues.push_back(leafVert[i].x);
+        leafValues.push_back(leafVert[i].y);
+        leafValues.push_back(leafVert[i].z);
+        leafTvalues.push_back(leafTex[i].s);
+        leafTvalues.push_back(leafTex[i].t);
+        leafNvalues.push_back(leafNorm[i].x);
+        leafNvalues.push_back(leafNorm[i].y);
+        leafNvalues.push_back(leafNorm[i].z);
+    }
+    // std::cout << leaf.getNumIndices() <<  " " << leaf.getNumVertices() << std::endl;
+
     // cubeMapTexture = loadCubeMap(CUBE_MAP_DIR);
     // glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
@@ -494,8 +513,10 @@ void Context::setupVertices() {
     bindBuffers(CUBE, vbo, cubeValues, cubeTvalues, cubeNvalues, cubeInd);
     bindBuffers(TORUS, vbo, torusValues, torusTvalues, torusNvalues, torusInd);
     bindBuffers(SPHERE, vbo, sphereValues, sphereTvalues, sphereNvalues, sphereInd);
+    bindBuffers(LEAF, vbo, leafValues, leafTvalues, leafNvalues, leafInd);
     bindBuffers(ROOM, vbo, roomCubeValues, roomCubeTvalues, roomCubeNvalues, roomCubeInd);
     bindBuffers(PLANE, vbo, surfaceValues, surfaceTvalues, surfaceNvalues, surfaceInd);
+    
 
 
     // perInstanceData = createPerInstanceData(numParticles);
@@ -677,12 +698,23 @@ void Context::passTwo() {
     // mvStack.pop();
 
     // drawObject(mvStack, surfaceTransform1, PLANE, surfaceInd.size(), 1);
-    // mvStack.pop();
-    drawObject(mvStack, surfaceTransform2, PLANE, surfaceInd.size(), 1);
+    drawObject(mvStack, tLight, SPHERE, sphere.getNumIndices(), SUN);
     mvStack.pop();
-    // drawObject(mvStack, surfaceTransform2, CUBE, roomCubeInd.size(), STATUE);
+    // mvStack.pop();
+    glDisable(GL_CULL_FACE);
+    // drawObject(mvStack, surfaceTransform2, LEAF, leafInd.size(), 1);
+    // mvStack.pop();
+    // drawObject(mvStack, surfaceTransform1, LEAF, leafInd.size(), 1);
+    // mvStack.pop();
+    // for (Transform& transformation : transformations1) {
+    //     Transform* t_ptr = &transformation;
+    //     drawObject(mvStack, t_ptr, LEAF, leaf.getNumIndices(), 3);
+    //     mvStack.pop();
+    // }
 
-    drawObjectsInstanced(SPHERE, ONYX, sphereInd.size());
+    drawObject(mvStack, surfaceTransform2, PLANE, surfaceInd.size(), STATUE);
+
+    // drawObjectsInstanced(SPHERE, ONYX, sphereInd.size());
     // mvStack.pop();
 
     // glFrontFace(GL_CW);
@@ -698,15 +730,27 @@ void Context::passTwo() {
 void Context::createTransformations() {
 
     t1 = new Transform(f, constantOne, constantT, rotationY);
-    t2 = new Transform(glm::vec3(0.0f, -75.0f, 0.0f), 28.0f, 0.0f, rotationX);
-    t6 = new Transform(glm::vec3(0.0f, 0.0f, 0.0f), 80.0f, 0.0f, rotationX);
+    t2 = new Transform(glm::vec3(0.0f, -75.0f, 0.0f), 28.0f, 0.0f, rotationY);
+    t6 = new Transform(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 0.0f, rotationY);
     t3 = new Transform(f2, constantHalf, constantT, rotationX);
     t4 = new Transform(ft, constantOne, constantT, rotationY);
     t5 = new Transform(f2t, constantHalf, constantT, rotationX);
     tLight = new Transform(getLightPos, constantTen, constantZero, rotationZ);
 
-    surfaceTransform1 = new Transform(glm::vec3(0.0f, 10.0f, 0.0f), 3.0f, -PIhalf/2.0f, rotationX);
-    surfaceTransform2 = new Transform(surfacePos, constantX, constantT, rotationZ);
+    surfaceTransform1 = new Transform(surfacePos, constantX, constantZero, rotationY);
+    surfaceTransform2 = new Transform(surfacePos, constantX, constantOne, rotationY);
+
+    int prec = 12;
+    std::vector<float> rotValues;
+    for (int i = 0; i < prec; i++) {
+        float rot = i * 2.0f*PI/prec;
+        rotValues.push_back(rot);
+        // std::cout << rot << std::endl;
+        transformations1.push_back(Transform(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, rot, rotationY));
+    }
+
+
+
 
     auto makeTranslationFunction1 = [](float offset) {
         return [offset](float t) -> glm::vec3 {
@@ -728,16 +772,16 @@ void Context::createTransformations() {
         };
     };
   
-    for (float i = 0.0f; i < PI * 2.0f; i+=.3f) {
-        translationFunctions1.push_back(makeTranslationFunction1(i));
-        translationFunctions2.push_back(makeTranslationFunction2(i));
-    }
+    // for (float i = 0.0f; i < PI * 2.0f; i+=.3f) {
+    //     translationFunctions1.push_back(makeTranslationFunction1(i));
+    //     translationFunctions2.push_back(makeTranslationFunction2(i));
+    // }
 
-    for (auto& func : translationFunctions1) {
-        transformations1.push_back(Transform(func, constantOne, constantT, rotationX));
-    }
+    // for (auto& func : translationFunctions1) {
+    //     transformations1.push_back(Transform(func, constantOne, constantT, rotationX));
+    // }
 
-    for (auto& func : translationFunctions2) {
-        transformations2.push_back(Transform(func, constantOne, constantT, rotationX));
-    }
+    // for (auto& func : translationFunctions2) {
+    //     transformations2.push_back(Transform(func, constantOne, constantT, rotationX));
+    // }
 }

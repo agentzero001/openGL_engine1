@@ -2,6 +2,54 @@
 #include "resource.h"
 
 
+const std::vector<Vertex> surfaceVertices = {
+	{{-1.0, -1.0, 0.0}, {}, {0.0, 0.0}, {0.0, 0.0, 1.0}},
+	{{1.0, -1.0, 0.0}, {}, {1.0, 0.0}, {0.0, 0.0, 1.0}},
+	{{1.0, 1.0, 0.0}, {}, {1.0, 1.0}, {0.0, 0.0, 1.0}},
+	{{-1.0, 1.0, 0.0}, {}, {0.0, 1.0}, {0.0, 0.0, 1.0}}
+};
+
+const std::vector<uint16_t> surfaceIndices = {
+	0, 1, 2, 2, 3, 0
+};
+
+
+std::vector<Vertex> tetraVertices = {
+    {{ 1.0f,  1.0f,  1.0f}, {}, {1.0, 0.0}, {0.0f, 0.0f, 0.0f}},
+    {{-1.0f, -1.0f,  1.0f}, {}, {1.0, 0.0}, {0.0f, 0.0f, 0.0f}},
+    {{-1.0f,  1.0f, -1.0f}, {}, {1.0, 0.0}, {0.0f, 0.0f, 0.0f}},
+    {{ 1.0f, -1.0f, -1.0f}, {}, {1.0, 0.0}, {0.0f, 0.0f, 0.0f}}
+};
+
+const std::vector<uint16_t> tetraIndices = {
+    0,1,2,
+    0,3,1,
+    0,2,3,
+    1,3,2
+};
+
+std::vector<Vertex> computeNormals(std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices) {
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        unsigned i0 = indices[i];
+        unsigned i1 = indices[i + 1];
+        unsigned i2 = indices[i + 2];
+        glm::vec3 v0 = vertices[i0].pos;
+        glm::vec3 v1 = vertices[i1].pos;
+        glm::vec3 v2 = vertices[i2].pos;
+        glm::vec3 e1 = v1 - v0;
+        glm::vec3 e2 = v2 - v0;
+
+        glm::vec3 faceNormal = glm::normalize(glm::cross(e1, e2));
+
+        vertices[i0].norm += faceNormal;
+        vertices[i1].norm += faceNormal;
+        vertices[i2].norm += faceNormal;   
+    }
+    return vertices;
+}
+
+
+
 void loadModel(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, std::string model_path) {
     tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
@@ -11,7 +59,6 @@ void loadModel(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, st
 	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, model_path.c_str())) {
 		throw std::runtime_error(warn + err);
 	}
-
 	std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 
    	for (const auto& shape : shapes) {
@@ -22,25 +69,21 @@ void loadModel(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, st
 				attrib.vertices[3 * index.vertex_index + 1],
 				attrib.vertices[3 * index.vertex_index + 2]
 			};
-
 			vertex.texCoord = {
 				attrib.texcoords[2 * index.texcoord_index + 0],
 				1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
 			};
-
             vertex.norm = {
                 attrib.normals[3 * index.normal_index + 0],
 				attrib.normals[3 * index.normal_index + 1],
 				attrib.normals[3 * index.normal_index + 2]
             };
-			
 			vertex.color = { .5f, .5f, .5f };
 			
 			if (uniqueVertices.count(vertex) == 0) {
 				uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
 			    vertices.push_back(vertex);
 			}
-
 			indices.push_back(uniqueVertices[vertex]);
 		}
 	}
@@ -48,7 +91,6 @@ void loadModel(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, st
 
 GLuint loadTexture(const char* texImagePath) {
     GLuint textureID;
-	
     textureID = SOIL_load_OGL_texture(texImagePath, SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
 
     //mipmapping
@@ -59,7 +101,6 @@ GLuint loadTexture(const char* texImagePath) {
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
 
     //anisotropic filtering
     //if (glewIsSupported("GL_EXT_texture_filter_anisotropic")) {
@@ -95,35 +136,16 @@ GLuint loadCubeMap(const char *mapDir) {
 		SOIL_CREATE_NEW_ID,
 		SOIL_FLAG_MIPMAPS
 	);
-
-
-
 	if (textureRef == 0) std::cout << "failed to find cube map image file" << std::endl;
 	glBindTexture(GL_TEXTURE_CUBE_MAP, textureRef);
 	//reduce seams
-	
 	// glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	// glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	return textureRef;
-
 }
-
-
-const std::vector<Vertex> surfaceVertices = {
-	{{-1.0, -1.0, 0.0}, {}, {0.0, 0.0}, {0.0, 0.0, 1.0}},
-	{{1.0, -1.0, 0.0}, {}, {1.0, 0.0}, {0.0, 0.0, 1.0}},
-	{{1.0, 1.0, 0.0}, {}, {1.0, 1.0}, {0.0, 0.0, 1.0}},
-	{{-1.0, 1.0, 0.0}, {}, {0.0, 1.0}, {0.0, 0.0, 1.0}}
-};
-
-const std::vector<uint16_t> surfaceIndices = {
-	0, 1, 2, 2, 3, 0
-};
 
 
 void setupShadowBuffers(int screenX, int  screenY, GLuint &shadowBuffer, GLuint &shadowTex, int shadowTexScale) {

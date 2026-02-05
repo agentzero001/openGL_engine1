@@ -47,8 +47,6 @@ void Torus::init() {
 		normals[i] = glm::cross(tTangents[i], sTangents[i]);
 	}
 
-
-
 	//rotate the first ring around Y to get the other rings
 	for (int ring = 1; ring < prec + 1; ring++) {
 		for (int vert = 0; vert < prec + 1; vert++) {
