@@ -28,7 +28,7 @@ const std::vector<uint16_t> tetraIndices = {
     1,3,2
 };
 
-std::vector<Vertex> computeNormals(std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices) {
+void computeNormals(std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices) {
     for (size_t i = 0; i < indices.size(); i += 3) {
         unsigned i0 = indices[i];
         unsigned i1 = indices[i + 1];
@@ -45,7 +45,6 @@ std::vector<Vertex> computeNormals(std::vector<Vertex>& vertices, const std::vec
         vertices[i1].norm += faceNormal;
         vertices[i2].norm += faceNormal;   
     }
-    return vertices;
 }
 
 

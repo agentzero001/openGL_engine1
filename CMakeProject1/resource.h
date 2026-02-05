@@ -109,7 +109,7 @@ std::vector<glm::vec3> createPerInstanceData(int numParticles);
 void createShaderStorageBuffers(int numParticles);
 void createShaderStorageBuffers2(int numParticles);
 
-std::vector<Vertex> computeNormals(std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices);
+void computeNormals(std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices);
 
 
 extern const std::vector<Vertex> surfaceVertices;
