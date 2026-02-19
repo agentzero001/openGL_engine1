@@ -96,14 +96,14 @@ auto getLightPos = [] (float t) -> glm::vec3 { return glm::vec3(currentLightPos.
 auto surfacePos = [] (float t) -> glm::vec3 { return glm::vec3(0.0f, 0.0f, 0.0f); };
 auto constantPIhalfN = [] (float t) -> float {return -PIhalf; };
 
-Context::Context(GLFWwindow* _window) : _window(_window), keyboardhandler(_window) {}
+// Context::Context(GLFWwindow* _window) : _window(_window), keyboardhandler(_window) {}
 
 void Context::run() {
 
     glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glfwSwapBuffers(_window);
-	glfwPollEvents();
+	// glfwPollEvents();
 	init();
 
 	while (!glfwWindowShouldClose(_window)) {
@@ -189,20 +189,15 @@ void Context::display(GLFWwindow* window, KeyboardHandler& keyboardHandler) {
     kPressed = toggleKey(GLFW_KEY_K, keyboardhandler);   
 
     glUseProgram(computeShaderProgram);
-    glUniform1i(startTimeLocC, GL_FALSE);
-    glUniform1i(switchVelocityLocC, GL_FALSE);
     
     if (kPressed) {
         elapsedTime = (float)glfwGetTime() - startTime;
         glUniform1i(startTimeLocC, GL_TRUE);
-        glUniform1f(tfLocC, elapsedTime);
-        std::cout << elapsedTime << std::endl;
     }
     else startTime = (float)glfwGetTime();
 
-    if (jPressed) {
-        glUniform1i(switchVelocityLocC, GL_TRUE);
-    }
+    glUniform1i(switchVelocityLocC, jPressed);
+    glUniform1i(startTimeLocC, kPressed);
 
     glDispatchCompute(numParticles, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS); 
@@ -290,7 +285,7 @@ void Context::drawObject(std::stack<glm::mat4>& mvStack, Transform* transform, i
 
     glUniformMatrix4fv(sLoc1, 1, GL_FALSE, glm::value_ptr(shadowMVP2)); 
     glUniformMatrix4fv(nLoc, 1, GL_FALSE, glm::value_ptr(invTrMat)); 
-    glUniformMatrix4fv(vLoc, 1, GL_FALSE, glm::value_ptr(vMat)); 
+    // glUniformMatrix4fv(vLoc, 1, GL_FALSE, glm::value_ptr(vMat)); 
     glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
     glUniform1i(isInstancedLoc, GL_FALSE);
     
@@ -318,7 +313,7 @@ void Context::drawObject(std::stack<glm::mat4>& mvStack, Transform* transform, i
 void Context::drawObjectsInstanced(int id, int texId, int numVertices) {
 
     glUniformMatrix4fv(vLoc, 1, GL_FALSE, glm::value_ptr(vMat));
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+// glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
     glUniform1i(isInstancedLoc, GL_TRUE);
 
     //vertices
@@ -422,7 +417,7 @@ void Context::setupVertices() {
     }
 
     computeNormals(tetraVertices, tetraIndices);
-    for (auto& vertex : tetraVertices) {
+    for (auto& vertex : surfaceVertices) {
         surfaceValues.push_back(vertex.pos.x);
         surfaceValues.push_back(vertex.pos.y);
         surfaceValues.push_back(vertex.pos.z);
@@ -431,7 +426,7 @@ void Context::setupVertices() {
         surfaceNvalues.push_back(vertex.norm.x);
         surfaceNvalues.push_back(vertex.norm.y);
         surfaceNvalues.push_back(vertex.norm.z);
-        std::cout << vertex.norm.z << std::endl;
+        // std::cout << vertex.norm.z << std::endl;
     }
     
     torusInd = torus.getIndices();
@@ -459,8 +454,8 @@ void Context::setupVertices() {
         cubeInd.push_back(value);
     }
 
-    for (uint32_t i = 0; i < tetraIndices.size(); i++) {
-        int value = tetraIndices[i];
+    for (uint32_t i = 0; i < surfaceIndices.size(); i++) {
+        int value = surfaceIndices[i];
         surfaceInd.push_back(value);
     }
 
@@ -516,8 +511,6 @@ void Context::setupVertices() {
     bindBuffers(LEAF, vbo, leafValues, leafTvalues, leafNvalues, leafInd);
     bindBuffers(ROOM, vbo, roomCubeValues, roomCubeTvalues, roomCubeNvalues, roomCubeInd);
     bindBuffers(PLANE, vbo, surfaceValues, surfaceTvalues, surfaceNvalues, surfaceInd);
-    
-
 
     // perInstanceData = createPerInstanceData(numParticles);
     // glBindBuffer(GL_ARRAY_BUFFER, vbo[numVBOs - 3]);
@@ -574,6 +567,10 @@ void Context::passOne() {
 	glDepthFunc(GL_LEQUAL);
    
     mvStack.push(glm::mat4(1.0f));
+
+
+    drawObjectShadow(mvStack, surfaceTransform2, PLANE, surfaceInd.size());
+    mvStack.pop();
     // drawObjectShadow(mvStack, t1, 0, torus.getNumIndices());
     // drawObjectShadow(mvStack, t3, 0, torus.getNumIndices());
     // for (Transform& transformation : transformations1) {
@@ -701,24 +698,24 @@ void Context::passTwo() {
     drawObject(mvStack, tLight, SPHERE, sphere.getNumIndices(), SUN);
     mvStack.pop();
     // mvStack.pop();
-    glDisable(GL_CULL_FACE);
+    // glDisable(GL_CULL_FACE);
     // drawObject(mvStack, surfaceTransform2, LEAF, leafInd.size(), 1);
     // mvStack.pop();
     // drawObject(mvStack, surfaceTransform1, LEAF, leafInd.size(), 1);
     // mvStack.pop();
-    // for (Transform& transformation : transformations1) {
-    //     Transform* t_ptr = &transformation;
-    //     drawObject(mvStack, t_ptr, LEAF, leaf.getNumIndices(), 3);
-    //     mvStack.pop();
-    // }
+    for (Transform& transformation : transformations1) {
+        Transform* t_ptr = &transformation;
+        drawObject(mvStack, t_ptr, LEAF, leaf.getNumIndices(), 3);
+        mvStack.pop();
+    }
 
     drawObject(mvStack, surfaceTransform2, PLANE, surfaceInd.size(), STATUE);
-
+    mvStack.pop();
     // drawObjectsInstanced(SPHERE, ONYX, sphereInd.size());
     // mvStack.pop();
 
-    // glFrontFace(GL_CW);
-    // drawObject(mvStack, t6, ROOM, roomCubeInd.size(), GRASS);
+    glFrontFace(GL_CW);
+    drawObject(mvStack, t6, ROOM, roomCubeInd.size(), GRASS);
     
     while (!mvStack.empty()) {
         mvStack.pop();
@@ -731,11 +728,11 @@ void Context::createTransformations() {
 
     t1 = new Transform(f, constantOne, constantT, rotationY);
     t2 = new Transform(glm::vec3(0.0f, -75.0f, 0.0f), 28.0f, 0.0f, rotationY);
-    t6 = new Transform(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 0.0f, rotationY);
+    t6 = new Transform(glm::vec3(0.0f, 0.0f, 0.0f), 40.0f, 0.0f, rotationY);
     t3 = new Transform(f2, constantHalf, constantT, rotationX);
     t4 = new Transform(ft, constantOne, constantT, rotationY);
     t5 = new Transform(f2t, constantHalf, constantT, rotationX);
-    tLight = new Transform(getLightPos, constantTen, constantZero, rotationZ);
+    tLight = new Transform(getLightPos, constantOne, constantZero, rotationZ);
 
     surfaceTransform1 = new Transform(surfacePos, constantX, constantZero, rotationY);
     surfaceTransform2 = new Transform(surfacePos, constantX, constantOne, rotationY);
@@ -748,10 +745,6 @@ void Context::createTransformations() {
         // std::cout << rot << std::endl;
         transformations1.push_back(Transform(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, rot, rotationY));
     }
-
-
-
-
     auto makeTranslationFunction1 = [](float offset) {
         return [offset](float t) -> glm::vec3 {
             return glm::vec3(

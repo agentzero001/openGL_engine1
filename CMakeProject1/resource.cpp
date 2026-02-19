@@ -47,8 +47,6 @@ void computeNormals(std::vector<Vertex>& vertices, const std::vector<uint16_t>& 
     }
 }
 
-
-
 void loadModel(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, std::string model_path) {
     tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;

@@ -30,7 +30,7 @@ namespace fs = std::filesystem;
 inline const fs::path TextureDir = "C:/Users/jensm/source/repos/CMakeProject1/res/textures";
 
 inline const fs::path BRICK_TEXTURE  = TextureDir / "brick.jpg";
-inline const fs::path GRASS_TEXTURE  = TextureDir / "onyxBlack.png";
+inline const fs::path GRASS_TEXTURE  = TextureDir / "woodFloor.jpg";
 inline const fs::path EARTH_TEXTURE  = TextureDir / "earth.jpg";
 inline const fs::path SUN_TEXTURE    = TextureDir / "sun.png";
 inline const fs::path MOON_TEXTURE   = TextureDir / "moon.jpg";
@@ -118,8 +118,5 @@ extern const std::vector<uint16_t> surfaceIndices;
 extern std::vector<Vertex> tetraVertices;
 extern const std::vector<uint16_t> tetraIndices;
 
-
 extern float vertexPositions[108];
-
 // extern std::vector<float> perInstanceData;
-

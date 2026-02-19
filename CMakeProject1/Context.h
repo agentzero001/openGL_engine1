@@ -40,7 +40,7 @@ enum objects {
 class Context {
 	
 	public:
-		Context(GLFWwindow* _window);
+		Context(GLFWwindow* _window) :  _window(_window), keyboardhandler(_window) {};
 		void run();
 
 	private:
